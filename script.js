@@ -4,6 +4,7 @@ const menuToggle = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#primary-navigation");
 const quoteForm = document.querySelector("#quote-form");
 const formStatus = document.querySelector("#form-status");
+const submissionSuccess = document.querySelector("#submission-success");
 
 function closeMenu() {
   if (!menuToggle || !navigation) return;
@@ -56,7 +57,7 @@ if (year) year.textContent = String(new Date().getFullYear());
 
 if (quoteForm instanceof HTMLFormElement && formStatus instanceof HTMLElement) {
   const submitButton = quoteForm.querySelector('button[type="submit"]');
-  const fields = [...quoteForm.querySelectorAll("input:not([type='hidden']):not([name='_honey']), select, textarea")];
+  const fields = [...quoteForm.querySelectorAll("input:not([type='hidden']):not([name='_gotcha']), select, textarea")];
 
   fields.forEach((field) => {
     field.addEventListener("input", () => {
@@ -69,9 +70,16 @@ if (quoteForm instanceof HTMLFormElement && formStatus instanceof HTMLElement) {
     field.addEventListener("change", () => field.removeAttribute("aria-invalid"));
   });
 
-  quoteForm.addEventListener("submit", (event) => {
+  quoteForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (quoteForm.action.endsWith("/TU_FORM_ID")) {
+      formStatus.textContent = "El formulario todavía no está conectado. Configura primero el endpoint de Formspree; consulta las instrucciones del proyecto.";
+      formStatus.classList.add("is-error");
+      return;
+    }
+
     if (!quoteForm.checkValidity()) {
-      event.preventDefault();
       const invalidFields = fields.filter((field) => !field.validity.valid);
       invalidFields.forEach((field) => field.setAttribute("aria-invalid", "true"));
       formStatus.textContent = "Revisa los campos marcados. Comprueba el formato del correo y completa los datos obligatorios.";
@@ -82,10 +90,58 @@ if (quoteForm instanceof HTMLFormElement && formStatus instanceof HTMLElement) {
 
     if (submitButton instanceof HTMLButtonElement) {
       submitButton.disabled = true;
-      submitButton.textContent = "Enviando solicitud…";
+      submitButton.textContent = "Enviando solicitud...";
     }
-    formStatus.textContent = "Enviando a FormSubmit. Espera la respuesta del servicio: esta página no confirmará la recepción por adelantado. Si aparece un error, vuelve a esta página para revisar los datos e intentarlo de nuevo.";
+    formStatus.textContent = "Enviando tu solicitud...";
     formStatus.classList.remove("is-error");
     formStatus.classList.add("is-pending");
+
+    try {
+      const response = await fetch(quoteForm.action, {
+        method: "POST",
+        body: new FormData(quoteForm),
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Formspree no ha aceptado la solicitud.";
+        try {
+          const result = await response.json();
+          if (Array.isArray(result.errors) && result.errors.length > 0) {
+            errorMessage = result.errors
+              .map((error) => error.message)
+              .filter(Boolean)
+              .join(" ");
+          }
+        } catch {
+          // Use the generic message when the provider response is not JSON.
+        }
+        throw new Error(errorMessage);
+      }
+
+      quoteForm.reset();
+      fields.forEach((field) => field.removeAttribute("aria-invalid"));
+      formStatus.textContent = "";
+      formStatus.classList.remove("is-error", "is-pending");
+
+      if (submissionSuccess instanceof HTMLElement) {
+        submissionSuccess.textContent = "¡Solicitud enviada! Formspree la ha aceptado. Gracias por contactar con EcoSkyClean Madrid.";
+        submissionSuccess.hidden = false;
+        window.location.hash = "inicio";
+        submissionSuccess.focus({ preventScroll: true });
+      } else {
+        formStatus.textContent = "Formspree ha aceptado la solicitud.";
+      }
+    } catch (error) {
+      const detail = error instanceof Error ? ` ${error.message}` : "";
+      formStatus.textContent = `No se pudo confirmar el envío. Tus datos siguen en el formulario; inténtalo de nuevo.${detail}`;
+      formStatus.classList.remove("is-pending");
+      formStatus.classList.add("is-error");
+    } finally {
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Enviar solicitud <span aria-hidden="true">↗</span>';
+      }
+    }
   });
 }

@@ -17,20 +17,24 @@ Abre `index.html` directamente en un navegador o usa la opción **Open with Live
 
 - **Textos:** modifica los elementos de `index.html`.
 - **Colores y tipografía:** ajusta las variables al principio de `styles.css`. Las fuentes DM Sans y Manrope se cargan desde Google Fonts; si no hay conexión, se usan fuentes del sistema.
-- **Imágenes:** reemplaza las URL de Unsplash en `index.html` por imágenes propias o recursos con licencia adecuada. Las fotos actuales son ilustrativas y no representan trabajos de EcoSkyClean Madrid. Si no cargan, queda un fondo de color como alternativa.
+- **Imágenes:** reemplaza las URL de imágenes en `index.html` por imágenes propias o recursos con licencia adecuada. La foto principal muestra paneles fotovoltaicos sobre tejados de teja y se atribuye a Marta Victoria (CC BY-SA 4.0) discretamente en el pie de página. Las fotos son ilustrativas y no representan trabajos de EcoSkyClean Madrid. Si no cargan, queda un fondo de color como alternativa.
 - **Contacto y ubicación:** añade únicamente datos reales y confirma el área de servicio antes de publicar.
 
-## Activar el envío con FormSubmit
+## Activar el envío con Formspree
 
-1. En `index.html`, busca `action="https://formsubmit.co/TU_CORREO@EJEMPLO.COM"` y sustituye **solo** `TU_CORREO@EJEMPLO.COM` por la dirección real que recibirá las solicitudes. No introduzcas credenciales ni claves.
-2. Publica el sitio o sírvelo desde una URL HTTPS accesible y envía una solicitud de prueba usando una dirección que puedas consultar.
-3. En el primer envío, FormSubmit puede enviar un mensaje de activación/confirmación a la dirección de destino. Abre ese correo y confirma la activación siguiendo las instrucciones del proveedor.
-4. Vuelve a enviar el formulario y comprueba la respuesta final de FormSubmit y la recepción del mensaje en la bandeja de entrada y spam. El formulario utiliza envío HTML convencional: el navegador muestra la respuesta real del proveedor. La página no anuncia éxito por adelantado ni usa `fetch`.
-5. Si el proveedor muestra un error, regresa a la página para corregir los datos e intentarlo de nuevo. La navegación del formulario puede hacer que el navegador conserve los valores al volver atrás; comprueba este comportamiento en el navegador que vayas a utilizar.
+El formulario envía por `fetch` (POST con respuesta JSON) al endpoint de Formspree. No requiere backend propio, paquetes ni API keys en el navegador. Cuando Formspree responde con éxito, se limpian los campos y se vuelve al inicio con un aviso visible. Si el servicio devuelve un error o la conexión falla, el formulario conserva los datos y permite reintentarlo.
 
-El asunto del mensaje está configurado como **Nueva solicitud de presupuesto - EcoSkyClean Madrid**. Los campos se envían con nombres legibles y el campo `email` permite a FormSubmit utilizar el correo del cliente para responder. El formato de mensaje está configurado como tabla. Se conserva activada la protección CAPTCHA predeterminada y se incluye un campo honeypot; no se ha desactivado la protección antispam.
+1. Crea o inicia sesión en [Formspree](https://formspree.io/), y verifica tu dirección de correo.
+2. Usa este [enlace de configuración de Formspree](https://formspree.io/claim?name=EcoSkyClean%20Madrid%20-%20Presupuestos&field.email=email,required&field.Nombre=text,required&field.Empresa=text&field.Tel%C3%A9fono=text&field.Tipo%20de%20servicio=text,required&field.Superficie%20aproximada%20%28m%C2%B2%29=numeric&field.Ubicaci%C3%B3n%20de%20la%20instalaci%C3%B3n=text,required&field.Mensaje=text,required,maxlength:3000) para iniciar la creación del formulario con sus campos. Inicia sesión si te lo solicita y confirma la creación.
+3. En el panel de Formspree, establece tu correo como destino de las notificaciones y copia el endpoint que aparece en **Integration**. Tendrá el formato `https://formspree.io/f/FORM_ID`.
+4. En `index.html`, sustituye `https://formspree.io/f/TU_FORM_ID` en el atributo `action` por ese endpoint.
+5. Despliega de nuevo el sitio en Cloudflare Pages y envía una prueba válida. Verifica que Formspree la acepte, que la solicitud aparezca en el panel y que llegue la notificación a tu correo (incluida la carpeta de spam). El mensaje de éxito aparece únicamente cuando la respuesta HTTP de Formspree indica que aceptó la solicitud; esto no garantiza por sí solo la entrega a la bandeja de entrada.
 
-FormSubmit es un proveedor externo gratuito con sus propias condiciones, disponibilidad y tratamiento de datos. El envío depende de su servicio y de la activación de la dirección receptora; la página estática no puede garantizar la entrega. Si necesitas controlar la entrega, privacidad o disponibilidad, evalúa un proveedor de formularios alternativo o un backend propio y configura su integración segura. No insertes claves secretas en el código público.
+No puedo crear ni adivinar el endpoint desde el código: Formspree lo genera dentro de tu cuenta, después de que confirmes el formulario. Mientras `TU_FORM_ID` siga en `index.html`, el script bloquea el envío y avisa que falta configurar el endpoint.
+
+El asunto está configurado como **Nueva solicitud de presupuesto - EcoSkyClean Madrid**; el email del visitante se envía en el campo `email` para que se pueda responder. El formulario incluye el campo trampa `_gotcha` y utiliza el filtrado antispam de Formspree. No se ha añadido una API key ni se desactivan las protecciones del proveedor. El envío AJAX requiere que Formspree permita el origen del sitio publicado; comprueba la configuración de dominios/orígenes si el navegador informa un error CORS.
+
+El endpoint es un marcador hasta que lo sustituyas por el tuyo; mientras siga así, el JavaScript impide el envío y avisa que falta configurarlo. La página no simula un envío correcto. Para solucionar errores, revisa el endpoint y los envíos/errores en el panel de Formspree. Los límites, planes, funciones antispam, disponibilidad y tratamiento de datos dependen del servicio y pueden cambiar: consulta sus condiciones y privacidad antes de usarlo en producción.
 
 ## Privacidad y preparación para publicar
 
@@ -38,11 +42,11 @@ FormSubmit es un proveedor externo gratuito con sus propias condiciones, disponi
 
 - identidad o razón social, NIF, domicilio y datos de contacto del responsable;
 - finalidad y base jurídica del tratamiento, conservación, destinatarios y derechos de las personas;
-- información y garantías aplicables al proveedor FormSubmit, incluidos posibles tratamientos o transferencias internacionales;
+- información y garantías aplicables al proveedor Formspree, incluidos posibles tratamientos o transferencias internacionales;
 - política de privacidad definitiva, aviso legal y cualquier otra información exigible para la actividad y el sitio.
 
-El formulario recoge datos personales. Revisa la normativa aplicable y las condiciones de FormSubmit antes de activarlo. No añadas una finalidad publicitaria ni utilices estos datos para publicidad no solicitada. El borrador de privacidad no sustituye una revisión legal.
+El formulario recoge datos personales. Revisa la normativa aplicable y las condiciones de Formspree antes de activarlo. No añadas una finalidad publicitaria ni utilices estos datos para publicidad no solicitada. El borrador de privacidad no sustituye una revisión legal.
 
 ## Publicación estática
 
-Sube los archivos de esta carpeta a un alojamiento estático que admita HTML, CSS y JavaScript (por ejemplo, un hosting web estático o un proveedor de páginas estáticas) y configura HTTPS. No hace falta compilar. Después de publicar, prueba navegación, diseño móvil y el flujo real de FormSubmit, incluida la confirmación inicial del correo.
+Sube los archivos de esta carpeta a un alojamiento estático que admita HTML, CSS y JavaScript (por ejemplo, un hosting web estático o un proveedor de páginas estáticas) y configura HTTPS. No hace falta compilar. Después de publicar, prueba navegación, diseño móvil y el envío real a tu endpoint de Formspree, incluyendo el retorno al inicio y el borrado del formulario tras una respuesta aceptada.
